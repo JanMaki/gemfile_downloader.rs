@@ -48,15 +48,21 @@ end";
                     return;
                 };
 
+                // キャッシュディレクトリ
+                let cache_directory =  &gems_cache_directory.join(download_result.file_stem().unwrap());
+
                 // .gemを解凍
-                let gz_result = unpack_gem(&download_result, &gems_cache_directory.join(download_result.file_stem().unwrap()));
+                let gz_result = unpack_gem(&download_result, &cache_directory);
                 assert!(gz_result.is_ok());
                 let Ok(gz_result) = gz_result else {
                     return;
                 };
 
+                // gemの本体を置くディレクトリ
+                let gems_directory = &gems_directory.join(download_result.file_stem().unwrap());
+
                 // .tar.gzを解凍
-                let result = unpack_tar_gz(&gz_result, &gems_directory.join(download_result.file_stem().unwrap()));
+                let result = unpack_tar_gz(&gz_result, &cache_directory, &gems_directory);
                 assert!(result.is_ok());
             }
         }).collect();

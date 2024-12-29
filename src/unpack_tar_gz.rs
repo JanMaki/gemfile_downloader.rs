@@ -2,7 +2,7 @@
 //! .tar.gzファイルを解凍します
 //!
 use std::error::Error;
-use std::fs::{create_dir_all, File};
+use std::fs::{create_dir_all, remove_dir_all, File};
 use std::io::copy;
 use std::path::{Path, PathBuf};
 use flate2::read::MultiGzDecoder;
@@ -12,13 +12,14 @@ use tar::Archive;
 /// .tar.gzファイルを解凍する
 ///
 /// * tar_gz_path - .tar.gzファイルのパス
+/// * cache_directory - 一時的に回答した.tarを置くキャッシュディレクトリ
 /// * directory - 解凍先のディレクトリ
 ///
 /// return - 解凍処理の結果
 ///
-pub fn unpack_tar_gz(tar_gz_path: &Path, directory: &Path) -> Result<(), Box<dyn Error>> {
+pub fn unpack_tar_gz(tar_gz_path: &Path, cache_directory: &Path, directory: &Path) -> Result<(), Box<dyn Error>> {
     // .gzファイルを解凍
-    let tar_file_path = unpack_gz(tar_gz_path, directory)?;
+    let tar_file_path = unpack_gz(tar_gz_path, cache_directory)?;
     // .tarファイルを解凍
     unpack_tar(&tar_file_path, directory)?;
 
@@ -42,7 +43,7 @@ fn unpack_gz(gz_path: &Path, directory: &Path) -> Result<PathBuf, Box<dyn Error>
     // gzipファイルを読み込み
     let gzip_file = File::open(gz_path)?;
     let mut decoder = MultiGzDecoder::new(&gzip_file);
-    
+
     // 出力ファイルを作成
     let gz_file_stem = gz_path.file_stem();
     let Some(gz_file_stem) = gz_file_stem else {
@@ -66,6 +67,11 @@ fn unpack_gz(gz_path: &Path, directory: &Path) -> Result<PathBuf, Box<dyn Error>
 /// return - 解凍処理の結果
 ///
 fn unpack_tar(tar_path: &Path, directory: &Path) -> Result<(), Box<dyn Error>> {
+    if directory.exists() {
+        remove_dir_all(directory)?;
+    }
+    create_dir_all(directory)?;
+
     // tarファイルを読み込み、解答
     let tar_file = File::open(tar_path)?;
     let mut archive = Archive::new(tar_file);
