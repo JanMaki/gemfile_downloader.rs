@@ -27,16 +27,7 @@ pub fn unpack_gem(path: &Path, directory: &Path) -> Result<PathBuf, Box<dyn Erro
     // .gemファイルの解凍
     let gem_file = File::open(path)?;
     let mut archive = Archive::new(gem_file);
-    // .gemファイルのエントリを取得
-    let entries = archive.entries()?;
-    for file in entries {
-        let Ok(mut file) = file else {
-            continue;
-        };
-
-        // ファイルの解凍
-        file.unpack_in(directory)?;
-    }
+    archive.unpack(directory)?;
 
     // data.tar.gzのパスを返す
     let data_path = directory.join(GEM_DATA_FILE);
