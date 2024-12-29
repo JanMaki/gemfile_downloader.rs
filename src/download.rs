@@ -1,7 +1,6 @@
 //!
 //! Gemのダウンロード処理
 //!
-
 use std::error::Error;
 use std::fs::{create_dir, exists, File};
 use std::io::copy;
@@ -55,7 +54,7 @@ mod tests {
     #[tokio::test]
     pub async fn download_test() {
         // テストケース
-        let directory = Path::new("./target/gems");
+        let directory = Path::new("./target/gems_dl_test");
         let source = "https://rubygems.org";
         let gem = Gem {
             name: "rake".to_string(),
