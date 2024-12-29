@@ -25,6 +25,10 @@ pub async fn download_gem(directory: &Path, source: &str, gem: &Gem) -> Result<P
 
     // ダウンロード
     let response = reqwest::get(&url).await?;
+    // ステータスコードを確認
+    if (response.status() != 200) {
+        return Err("Failed to download".into());
+    }
     let bytes = response.bytes().await?;
 
     // ファイルに書き込み
