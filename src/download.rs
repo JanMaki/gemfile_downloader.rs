@@ -2,9 +2,10 @@
 //! Gemのダウンロード処理
 //!
 use std::error::Error;
-use std::fs::{create_dir, exists, File};
+use std::fs::{exists, File};
 use std::io::copy;
 use std::path::{Path, PathBuf};
+use tokio::fs::create_dir_all;
 use crate::parser::Gem;
 
 ///
@@ -32,7 +33,7 @@ pub async fn download_gem(directory: &Path, source: &str, gem: &Gem) -> Result<P
 
     // ファイルに書き込み
     if exists(directory)? == false {
-        create_dir(directory)?;
+        create_dir_all(directory).await?;
     }
     let path = directory.join(filename);
     let mut out = File::create(&path)?;
