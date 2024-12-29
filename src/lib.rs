@@ -1,6 +1,7 @@
 pub mod parser;
 pub mod download;
 pub mod unpack_gem;
+pub mod unpack_tar_gz;
 
 #[cfg(test)]
 mod tests {
@@ -9,6 +10,7 @@ mod tests {
     use crate::download::download_gem;
     use crate::parser::GemfileData;
     use crate::unpack_gem::unpack_gem;
+    use crate::unpack_tar_gz::unpack_tar_gz;
 
     ///
     /// Gemsのダウンロードのテスト
@@ -38,20 +40,22 @@ end";
             let source = gemfile_data.source.clone();
             async move {
                 // ダウンロード
-                let result = download_gem(gem_directory, &source, &gem).await;
-                assert!(result.is_ok());
-                let Ok(result) = result else {
+                let download_result = download_gem(gem_directory, &source, &gem).await;
+                assert!(download_result.is_ok());
+                let Ok(download_result) = download_result else {
                     return;
                 };
 
-                // ,gemを解凍
-                let result = unpack_gem(&result, &gem_directory.join(result.file_stem().unwrap()));
-                assert!(result.is_ok());
-                let Ok(result) = result else {
+                // .gemを解凍
+                let gz_result = unpack_gem(&download_result, &gem_directory.join(download_result.file_stem().unwrap()));
+                assert!(gz_result.is_ok());
+                let Ok(gz_result) = gz_result else {
                     return;
                 };
 
-
+                // .tar.gzを解凍
+                let result = unpack_tar_gz(&gz_result, &gem_directory.join(download_result.file_stem().unwrap()));
+                assert!(result.is_ok());
             }
         }).collect();
         join_all(tasks).await;
