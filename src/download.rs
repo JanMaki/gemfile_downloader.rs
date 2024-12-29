@@ -17,7 +17,7 @@ use crate::parser::Gem;
 ///
 /// return - ダウンロード処理の結果
 ///
-pub async fn download_gem(directory: &Path, source: &str, gem: &Gem) -> Result<(PathBuf), Box<dyn Error>> {
+pub async fn download_gem(directory: &Path, source: &str, gem: &Gem) -> Result<PathBuf, Box<dyn Error>> {
     // urlの作成
     let url = format!("{}/downloads/{}-{}.gem", source, gem.name, gem.version);
     // ファイル名の作成
