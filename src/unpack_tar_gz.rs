@@ -21,7 +21,7 @@ pub fn unpack_tar_gz(tar_gz_path: &Path, cache_directory: &Path, directory: &Pat
     // .gzファイルを解凍
     let tar_file_path = unpack_gz(tar_gz_path, cache_directory)?;
     // .tarファイルを解凍
-    Ok(unpack_tar(&tar_file_path, directory)?)
+    unpack_tar(&tar_file_path, directory)
 }
 
 

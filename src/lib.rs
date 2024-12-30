@@ -24,7 +24,7 @@ pub async fn install_from_gemfile(gemfile: &Path, install_dictionary: &Path, cac
     let gemfile_context = read_to_string(gemfile).await?;
 
     // Gemのダウンロード
-    Ok(install_gems(&gemfile_context, install_dictionary, cache_directory).await?)
+    install_gems(&gemfile_context, install_dictionary, cache_directory).await
 }
 
 ///
@@ -65,13 +65,13 @@ pub async fn install_gems(gemfile_context: &str, install_dictionary: &Path, cach
             let gems_directory = &install_dictionary.join(gem_name);
 
             // .gemを解凍
-            let gz_result = unpack_gem::unpack_gem(&download_result, &cache_directory);
+            let gz_result = unpack_gem::unpack_gem(&download_result, cache_directory);
             let Ok(gz_result) = gz_result else {
                 return;
             };
 
             // .tar.gzを解凍
-            let tar_gz_result = unpack_tar_gz::unpack_tar_gz(&gz_result, &cache_directory, &gems_directory);
+            let tar_gz_result = unpack_tar_gz::unpack_tar_gz(&gz_result, cache_directory, gems_directory);
             let Ok(tar_gz_result) = tar_gz_result else {
                 return;
             };

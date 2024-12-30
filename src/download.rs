@@ -32,7 +32,7 @@ pub async fn download_gem(directory: &Path, source: &str, gem: &Gem) -> Result<P
     let bytes = response.bytes().await?;
 
     // ファイルに書き込み
-    if exists(directory)? == false {
+    if !exists(directory)? {
         create_dir_all(directory).await?;
     }
     let path = directory.join(filename);
