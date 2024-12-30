@@ -10,16 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
+    - uses: actions/checkout@v3
+    - uses: actions-rs/toolchain@v1
       with:
-        toolchain: stable
-        override: true
-
-    - name: Publish to crates.io
-      env:
-        CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-      run: cargo publish
+          toolchain: stable
+          override: true
+    - uses: katyo/publish-crates@v2
+      with:
+          registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
