@@ -1,7 +1,9 @@
 use std::error::Error;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use futures::future::join_all;
 use tokio::fs::read_to_string;
+use tokio::sync::Mutex;
 
 pub mod parser;
 pub mod download;
@@ -17,14 +19,12 @@ pub mod unpack_tar_gz;
 ///
 /// return - インストール処理の結果
 ///
-pub async fn install_from_gemfile(gemfile: &Path, install_dictionary: &Path, cache_directory: &Path) -> Result<(), Box<dyn Error>> {
+pub async fn install_from_gemfile(gemfile: &Path, install_dictionary: &Path, cache_directory: &Path) -> Result<Vec<PathBuf>, Box<dyn Error>> {
     // Gemfileの内容を取得
     let gemfile_context = read_to_string(gemfile).await?;
 
     // Gemのダウンロード
-    install_gems(&gemfile_context, install_dictionary, cache_directory).await?;
-
-    Ok(())
+    Ok(install_gems(&gemfile_context, install_dictionary, cache_directory).await?)
 }
 
 ///
@@ -34,15 +34,20 @@ pub async fn install_from_gemfile(gemfile: &Path, install_dictionary: &Path, cac
 /// * install_dictionary - Gemのインストール先のディレクトリ
 /// * cache_directory - Gemのダウンロード先のキャッシュディレクトリ
 ///
-/// return - インストール処理の結果
+/// return - インストール処理の結果 Gemfileが含まれている場合、すべてのGemfileのパスを返す
 ///
-pub async fn install_gems(gemfile_context: &str, install_dictionary: &Path, cache_directory: &Path) -> Result<(), Box<dyn Error>>{
+pub async fn install_gems(gemfile_context: &str, install_dictionary: &Path, cache_directory: &Path) -> Result<Vec<PathBuf>, Box<dyn Error>>{
     // パース
     let gemfile_data = parser::GemfileData::parse(gemfile_context);
 
+    // インストールしたGemに含まれていたGemfileのパス
+    let gemfiles = Arc::new(Mutex::new(Vec::new()));
+
     // gemをすべてダウンロード
     let tasks: Vec<_> = gemfile_data.gems.into_iter().map(|gem| {
+        let gemfiles = Arc::clone(&gemfiles);
         let source = gemfile_data.source.clone();
+
         async move {
             // ダウンロード
             let download_result = download::download_gem(cache_directory, &source, &gem).await;
@@ -70,11 +75,20 @@ pub async fn install_gems(gemfile_context: &str, install_dictionary: &Path, cach
             let Ok(tar_gz_result) = tar_gz_result else {
                 return;
             };
+
+            // gemfileのパスを追加
+            if let Some(gemfile) = tar_gz_result {
+                gemfiles.lock().await.push(gemfile);
+            }
         }
     }).collect();
     join_all(tasks).await;
 
-    Ok(())
+    // Gemfileのパスの一覧を返す
+    let Ok(gemfiles) = Arc::try_unwrap(gemfiles) else {
+        return Ok(Vec::new());
+    };
+    Ok(gemfiles.into_inner())
 }
 
 #[cfg(test)]
@@ -106,5 +120,9 @@ gem \"concurrent-ruby\", \"~> 1.3.4\"
 end";
         let result = install_gems(gemfile, gems_directory, gems_cache_directory).await;
         assert!(result.is_ok());
+
+        result.unwrap().iter().for_each(|gemfile| {
+            println!("gemfile: {:?}", gemfile);
+        });
     }
 }
