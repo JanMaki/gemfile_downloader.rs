@@ -2,7 +2,7 @@
 //! .tar.gzファイルを解凍します
 //!
 use std::error::Error;
-use std::fs::{create_dir_all, exists, remove_dir_all, File};
+use std::fs::{create_dir_all, remove_dir_all, File};
 use std::io::copy;
 use std::path::{Path, PathBuf};
 use flate2::read::MultiGzDecoder;

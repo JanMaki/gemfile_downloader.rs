@@ -2,9 +2,6 @@
 //! Gemfileのテキストをパースします
 //!
 
-use std::error::Error;
-use std::path::Path;
-
 ///
 /// 各Gemのデータ
 ///
