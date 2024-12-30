@@ -9,6 +9,6 @@ edition = "2021"
 [dependencies]
 flate2 = "1.0.35"
 futures = "0.3.31"
-reqwest = "0.12.9"
+reqwest = "0.12.11"
 tar = "0.4.43"
 tokio = {version =  "1.42.0", features = ["full"]}
