@@ -41,7 +41,7 @@ impl GemfileData {
                     .replace("\"", "")
             }
             // gemの行の場合
-            if line.starts_with("gem ") {
+            if line.starts_with("gem ") || line.starts_with(" gem"){
                 // 余分な個所を削除
                 let trimmed = line.replace("gem ", "")
                     .replace("\"", "")
@@ -76,10 +76,10 @@ source \"https://rubygems.org\"
 gemspec
 
 group :development, :test do
-gem \"docile\", \"~> 1.4.0\"
-gem \"simplecov-html\", \"~> 0.12.3\"
-gem \"i18n\", \"~> 1.8.5\"
-gem \"concurrent-ruby\", \"~> 1.1.9\"\
+ gem \"docile\", \"~> 1.4.0\"
+ gem \"simplecov-html\", \"~> 0.12.3\"
+ gem \"i18n\", \"~> 1.8.5\"
+ gem \"concurrent-ruby\", \"~> 1.1.9\"\
 end");
 
         // 簡単に検証

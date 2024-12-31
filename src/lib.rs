@@ -113,10 +113,10 @@ source \"https://rubygems.org\"
 gemspec
 
 group :development, :test do
-gem \"docile\", \"~> 1.4.0\"
-gem \"simplecov-html\", \"~> 0.12.3\"
-gem \"i18n\", \"~> 1.8.5\"
-gem \"concurrent-ruby\", \"~> 1.3.4\"
+ gem \"docile\", \"~> 1.4.0\"
+ gem \"simplecov-html\", \"~> 0.12.3\"
+ gem \"i18n\", \"~> 1.8.5\"
+ gem \"concurrent-ruby\", \"~> 1.3.4\"
 end";
         let result = install_gems(gemfile, gems_directory, gems_cache_directory).await;
         assert!(result.is_ok());
