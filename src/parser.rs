@@ -47,6 +47,7 @@ impl GemfileData {
             if line.starts_with("source ") {
                 source = line.replace("source ", "")
                     .replace("\"", "")
+                    .replace("'", "");
             }
             // gemの行の場合
             if line.starts_with("gem ") || line.starts_with(" gem"){
@@ -55,6 +56,7 @@ impl GemfileData {
                     .replace("\"", "")
                     .replace("~>", "")
                     .replace(" ", "")
+                    .replace("\"", "")
                     .replace("\'", "");
                 // カンマで分割
                 let splitted = trimmed.split(",").collect::<Vec<&str>>();
