@@ -3,7 +3,7 @@ name = "gemfile_downloader"
 description = "Installs libraries from Ruby's Gemfile."
 keywords = ["gemfile", "ruby"]
 license = "MIT"
-version = "0.1.2"
+version = "1.0.0"
 edition = "2021"
 
 [dependencies]

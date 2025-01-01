@@ -302,7 +302,7 @@ dependencies = [
 
 [[package]]
 name = "gemfile_downloader"
-version = "0.1.2"
+version = "1.0.0"
 dependencies = [
  "flate2",
  "futures",

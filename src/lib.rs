@@ -4,6 +4,7 @@ use std::sync::Arc;
 use futures::future::join_all;
 use tokio::fs::read_to_string;
 use tokio::sync::Mutex;
+use crate::parser::GemfileData;
 
 pub mod parser;
 pub mod download;
@@ -18,18 +19,18 @@ pub mod gem_version;
 /// * install_dictionary - Gemのインストール先のディレクトリ
 /// * cache_directory - Gemのダウンロード先のキャッシュディレクトリ
 ///
-/// return - インストール処理の結果
+/// return -  インストール処理の結果 Gemfileが含まれている場合、すべてのGemfileのパスを返す
 ///
-pub async fn install_from_gemfile(gemfile: &Path, install_dictionary: &Path, cache_directory: &Path) -> Result<Vec<PathBuf>, Box<dyn Error>> {
+pub async fn install_from_gemfile_file(gemfile: &Path, install_dictionary: &Path, cache_directory: &Path) -> Result<Vec<PathBuf>, Box<dyn Error>> {
     // Gemfileの内容を取得
     let gemfile_context = read_to_string(gemfile).await?;
 
     // Gemのダウンロード
-    install_gems(&gemfile_context, install_dictionary, cache_directory).await
+    install_from_gemfile_literal(&gemfile_context, install_dictionary, cache_directory).await
 }
 
 ///
-/// Gemのインストールを行う
+/// Gemfileの文字列のデータから、Gemのインストールを行う
 ///
 /// * gemfile_context - Gemfileの内容
 /// * install_dictionary - Gemのインストール先のディレクトリ
@@ -37,9 +38,23 @@ pub async fn install_from_gemfile(gemfile: &Path, install_dictionary: &Path, cac
 ///
 /// return - インストール処理の結果 Gemfileが含まれている場合、すべてのGemfileのパスを返す
 ///
-pub async fn install_gems(gemfile_context: &str, install_dictionary: &Path, cache_directory: &Path) -> Result<Vec<PathBuf>, Box<dyn Error>>{
+pub async fn install_from_gemfile_literal(gemfile_context: &str, install_dictionary: &Path, cache_directory: &Path) -> Result<Vec<PathBuf>, Box<dyn Error>> {
     // パース
     let gemfile_data = parser::GemfileData::parse(gemfile_context).await?;
+
+    install_gems(gemfile_data, install_dictionary, cache_directory).await
+}
+
+///
+/// Gemのインストールを行う
+///
+/// * gemfile_data - Gemfileの読み込み済みデータ
+/// * install_dictionary - Gemのインストール先のディレクトリ
+/// * cache_directory - Gemのダウンロード先のキャッシュディレクトリ
+///
+/// return - インストール処理の結果 Gemfileが含まれている場合、すべてのGemfileのパスを返す
+///
+pub async fn install_gems(gemfile_data: GemfileData, install_dictionary: &Path, cache_directory: &Path) -> Result<Vec<PathBuf>, Box<dyn Error>>{
 
     // インストールしたGemに含まれていたGemfileのパス
     let gemfiles = Arc::new(Mutex::new(Vec::new()));
@@ -95,7 +110,7 @@ pub async fn install_gems(gemfile_context: &str, install_dictionary: &Path, cach
 #[cfg(test)]
 mod tests {
     use std::path::Path;
-    use crate::install_gems;
+    use crate::{install_from_gemfile_file, install_from_gemfile_literal, install_gems};
 
     ///
     /// Gemsのダウンロードのテスト
@@ -119,7 +134,7 @@ group :development, :test do
  gem \"i18n\", \"~> 1.8.5\"
  gem \"concurrent-ruby\", \"~> 1.3.4\"
 end";
-        let result = install_gems(gemfile, gems_directory, gems_cache_directory).await;
+        let result = install_from_gemfile_literal(gemfile, gems_directory, gems_cache_directory).await;
         assert!(result.is_ok());
 
         result.unwrap().iter().for_each(|gemfile| {
