@@ -34,7 +34,15 @@ impl GemfileData {
         let mut gems: Vec<Gem> = Vec::new();
 
         // 行ごとに処理
-        data.lines().for_each(|line| {
+        data.lines().for_each(|mut line| {
+            // 行の前後の空白を削除
+            loop {
+                if !line.starts_with(" ") {
+                    break;
+                }
+                line = &line[1..];
+            }
+
             // sourceの行の場合、sourceの値を取得
             if line.starts_with("source ") {
                 source = line.replace("source ", "")
