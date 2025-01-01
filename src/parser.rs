@@ -2,6 +2,13 @@
 //! Gemfileのテキストをパースします
 //!
 
+use std::error::Error;
+use regex::Regex;
+use crate::gem_version::GemVersion;
+
+// バージョンの正規表現
+const GEM_VERSION_REGEX: &str = "[0-9]+\\.[0-9]+\\.[0-9]+";
+
 ///
 /// 各Gemのデータ
 ///
@@ -28,13 +35,13 @@ impl GemfileData {
     ///
     ///  Gemfileのテキストをパースします
     ///
-    pub fn parse(data: &str) -> GemfileData{
+    pub async fn parse(data: &str) -> Result<GemfileData, Box<dyn Error>>{
         // デフォルトの値を設定
         let mut source = "https://rubygems.org".to_string();
         let mut gems: Vec<Gem> = Vec::new();
 
         // 行ごとに処理
-        data.lines().for_each(|mut line| {
+        for mut line in data.lines() {
             // 行の前後の空白を削除
             loop {
                 if !line.starts_with(" ") {
@@ -60,16 +67,28 @@ impl GemfileData {
                     .replace("\'", "");
                 // カンマで分割
                 let splitted = trimmed.split(",").collect::<Vec<&str>>();
-                // Gemのデータを追加
-                gems.push(Gem {
-                    name: splitted[0].to_string(),
-                    version: splitted[1].to_string(),
-                });
+                let version_regex = Regex::new(GEM_VERSION_REGEX)?;
+                // バージョンが指定されているかを確認
+                if splitted.len() >= 2 && version_regex.is_match(splitted[1]) {
+                    // バージョンを指定している場合はそのままgemを作成
+                    gems.push(Gem {
+                        name: splitted[0].to_string(),
+                        version: splitted[1].to_string(),
+                    });
+                } else if splitted.len() >= 1 {
+                    // バージョン指定がされていない場合はAPIから取得
+                    let version = GemVersion::get_version(&source, splitted[0]).await?;
+
+                    // Gemのデータを追加
+                    gems.push(Gem {
+                        name: splitted[0].to_string(),
+                        version: version.version
+                    });
+                }
             }
-        });
+        }
 
-
-        GemfileData { source, gems }
+        Ok(GemfileData { source, gems })
     }
 }
 
@@ -77,8 +96,8 @@ impl GemfileData {
 #[cfg(test)]
 mod tests {
     use crate::parser::GemfileData;
-    #[test]
-    pub fn parse_test() {
+    #[tokio::test]
+    pub async fn parse_test() {
         // パースをテスト
         let gemfile_data = GemfileData::parse("
 source \"https://rubygems.org\"
@@ -90,16 +109,18 @@ group :development, :test do
  gem \"simplecov-html\", \"~> 0.12.3\"
  gem \"i18n\", \"~> 1.8.5\"
  gem \"concurrent-ruby\", \"~> 1.1.9\"\
-end");
+end").await;
 
         // 簡単に検証
+        assert!(gemfile_data.is_ok());
+        let gemfile_data = gemfile_data.unwrap();
         assert_eq!(gemfile_data.source, "https://rubygems.org");
         assert_eq!(gemfile_data.gems.len(), 4);
     }
 
 
-    #[test]
-    pub fn parse_test2() {
+    #[tokio::test]
+    pub  async fn parse_test2() {
         // パースをテスト
         let gemfile_data = GemfileData::parse("
 source 'https://rubygems.org'
@@ -143,9 +164,11 @@ end
 group :benchmarks, optional: true do
   gem 'benchmark-ips', '~> 2.7'
   gem 'bench9000'
-end");
+end").await;
 
         // 簡単に検証
+        assert!(gemfile_data.is_ok());
+        let gemfile_data = gemfile_data.unwrap();
         assert_eq!(gemfile_data.source, "https://rubygems.org");
         assert_eq!(gemfile_data.gems.len(), 17);
     }

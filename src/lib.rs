@@ -9,6 +9,7 @@ pub mod parser;
 pub mod download;
 pub mod unpack_gem;
 pub mod unpack_tar_gz;
+pub mod gem_version;
 
 ///
 /// Gemfileを読み込み、Gemのインストールを行う
@@ -38,7 +39,7 @@ pub async fn install_from_gemfile(gemfile: &Path, install_dictionary: &Path, cac
 ///
 pub async fn install_gems(gemfile_context: &str, install_dictionary: &Path, cache_directory: &Path) -> Result<Vec<PathBuf>, Box<dyn Error>>{
     // パース
-    let gemfile_data = parser::GemfileData::parse(gemfile_context);
+    let gemfile_data = parser::GemfileData::parse(gemfile_context).await?;
 
     // インストールしたGemに含まれていたGemfileのパス
     let gemfiles = Arc::new(Mutex::new(Vec::new()));
