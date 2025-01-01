@@ -110,7 +110,7 @@ pub async fn install_gems(gemfile_data: GemfileData, install_dictionary: &Path, 
 #[cfg(test)]
 mod tests {
     use std::path::Path;
-    use crate::{install_from_gemfile_file, install_from_gemfile_literal, install_gems};
+    use crate::install_from_gemfile_literal;
 
     ///
     /// Gemsのダウンロードのテスト

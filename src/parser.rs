@@ -4,6 +4,7 @@
 
 use std::error::Error;
 use regex::Regex;
+use serde::{Deserialize, Serialize};
 use crate::gem_version::GemVersion;
 
 // バージョンの正規表現
@@ -12,7 +13,7 @@ const GEM_VERSION_REGEX: &str = "[0-9]+\\.[0-9]+\\.[0-9]+";
 ///
 /// 各Gemのデータ
 ///
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Gem {
     /// Gemの名前
     pub name: String,
@@ -23,7 +24,7 @@ pub struct Gem {
 ///
 /// Gemfileのデータ
 ///
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GemfileData {
     // gemのダウンロードを行うソース
     pub source: String,

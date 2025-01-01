@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// GemのSerialize/Deserialize用の構造体
 ///
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct  GemVersion {
     pub version: String,
 }
