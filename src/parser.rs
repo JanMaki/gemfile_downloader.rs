@@ -50,7 +50,7 @@ impl GemfileData {
                     .replace("'", "");
             }
             // gemの行の場合
-            if line.starts_with("gem ") || line.starts_with(" gem"){
+            if line.starts_with("gem "){
                 // 余分な個所を削除
                 let trimmed = line.replace("gem ", "")
                     .replace("\"", "")
