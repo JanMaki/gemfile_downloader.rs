@@ -76,7 +76,7 @@ impl GemfileData {
                         name: splitted[0].to_string(),
                         version: splitted[1].to_string(),
                     });
-                } else if splitted.len() >= 1 {
+                } else if !splitted.is_empty() {
                     // バージョン指定がされていない場合はAPIから取得
                     let version = GemVersion::get_version(&source, splitted[0]).await?;
 
