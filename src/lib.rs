@@ -19,9 +19,9 @@ pub mod gem_version;
 /// * install_dictionary - Gemのインストール先のディレクトリ
 /// * cache_directory - Gemのダウンロード先のキャッシュディレクトリ
 ///
-/// return -  インストール処理の結果 Gemfileが含まれている場合、すべてのGemfileのパスを返す
+/// return -  インストール処理の結果 インストールしたgemsの一覧と、Gemfileが含まれている場合、すべてのGemfileのパスを返す
 ///
-pub async fn install_from_gemfile_file(gemfile: &Path, install_dictionary: &Path, cache_directory: &Path) -> Result<Vec<PathBuf>, Box<dyn Error>> {
+pub async fn install_from_gemfile_file(gemfile: &Path, install_dictionary: &Path, cache_directory: &Path) -> Result<(Vec<String>, Vec<PathBuf>), Box<dyn Error>> {
     // Gemfileの内容を取得
     let gemfile_context = read_to_string(gemfile).await?;
 
@@ -36,9 +36,9 @@ pub async fn install_from_gemfile_file(gemfile: &Path, install_dictionary: &Path
 /// * install_dictionary - Gemのインストール先のディレクトリ
 /// * cache_directory - Gemのダウンロード先のキャッシュディレクトリ
 ///
-/// return - インストール処理の結果 Gemfileが含まれている場合、すべてのGemfileのパスを返す
+/// return - インストール処理の結果 インストールしたgemsの一覧と、Gemfileが含まれている場合、すべてのGemfileのパスを返す
 ///
-pub async fn install_from_gemfile_literal(gemfile_context: &str, install_dictionary: &Path, cache_directory: &Path) -> Result<Vec<PathBuf>, Box<dyn Error>> {
+pub async fn install_from_gemfile_literal(gemfile_context: &str, install_dictionary: &Path, cache_directory: &Path) -> Result<(Vec<String>, Vec<PathBuf>), Box<dyn Error>> {
     // パース
     let gemfile_data = parser::GemfileData::parse(gemfile_context).await?;
 
@@ -52,15 +52,18 @@ pub async fn install_from_gemfile_literal(gemfile_context: &str, install_diction
 /// * install_dictionary - Gemのインストール先のディレクトリ
 /// * cache_directory - Gemのダウンロード先のキャッシュディレクトリ
 ///
-/// return - インストール処理の結果 Gemfileが含まれている場合、すべてのGemfileのパスを返す
+/// return - インストール処理の結果 インストールしたgemsの一覧と、Gemfileが含まれている場合、すべてのGemfileのパスを返す
 ///
-pub async fn install_gems(gemfile_data: GemfileData, install_dictionary: &Path, cache_directory: &Path) -> Result<Vec<PathBuf>, Box<dyn Error>>{
+pub async fn install_gems(gemfile_data: GemfileData, install_dictionary: &Path, cache_directory: &Path) -> Result<(Vec<String>, Vec<PathBuf>), Box<dyn Error>>{
 
+    // インストールしたGemの一覧
+    let installed_gems: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
     // インストールしたGemに含まれていたGemfileのパス
     let gemfiles = Arc::new(Mutex::new(Vec::new()));
 
     // gemをすべてダウンロード
     let tasks: Vec<_> = gemfile_data.gems.into_iter().map(|gem| {
+        let installed_gems = Arc::clone(&installed_gems);
         let gemfiles = Arc::clone(&gemfiles);
         let source = gemfile_data.source.clone();
 
@@ -92,6 +95,9 @@ pub async fn install_gems(gemfile_data: GemfileData, install_dictionary: &Path, 
                 return;
             };
 
+            // インストール一覧に追加
+            installed_gems.lock().await.push(gem_name.to_string_lossy().to_string());
+
             // gemfileのパスを追加
             if let Some(gemfile) = tar_gz_result {
                 gemfiles.lock().await.push(gemfile);
@@ -100,11 +106,16 @@ pub async fn install_gems(gemfile_data: GemfileData, install_dictionary: &Path, 
     }).collect();
     join_all(tasks).await;
 
-    // Gemfileのパスの一覧を返す
-    let Ok(gemfiles) = Arc::try_unwrap(gemfiles) else {
-        return Ok(Vec::new());
+    // Arcを外す
+    let Ok(installed_gems) = Arc::try_unwrap(installed_gems) else {
+        return Err("installed_gems unwrap error".into());
     };
-    Ok(gemfiles.into_inner())
+    let Ok(gemfiles) = Arc::try_unwrap(gemfiles) else {
+        return Err("gemfiles unwrap error".into());
+    };
+
+
+    Ok((installed_gems.into_inner(), gemfiles.into_inner()))
 }
 
 #[cfg(test)]
@@ -137,7 +148,7 @@ end";
         let result = install_from_gemfile_literal(gemfile, gems_directory, gems_cache_directory).await;
         assert!(result.is_ok());
 
-        result.unwrap().iter().for_each(|gemfile| {
+        result.unwrap().1.iter().for_each(|gemfile| {
             println!("gemfile: {:?}", gemfile);
         });
     }
